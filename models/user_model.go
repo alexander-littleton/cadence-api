@@ -3,6 +3,6 @@ package models
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type User struct {
-	Id    primitive.ObjectID `json:"id,omitempty"`
+	Id    primitive.ObjectID `json:"id,omitempty" validate:"required"`
 	Email string             `json:"name,omitempty" validate:"required"`
 }

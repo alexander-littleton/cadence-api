@@ -20,14 +20,18 @@ func SetUpRouter() *gin.Engine {
 }
 
 var _ = Describe("Main", func() {
+	//TODO: figure out mocking and mockgen
+	userController := NewUserController(mockUserRepo)
+
 	var r *gin.Engine
 	var w *httptest.ResponseRecorder
-	var req *http.Request
-	var data []byte
 	BeforeEach(func() {
 		r = SetUpRouter()
 		w = httptest.NewRecorder()
 	})
+
+	var req *http.Request
+	var data []byte
 	JustBeforeEach(func() {
 		r.ServeHTTP(w, req)
 		res := w.Result()
@@ -38,7 +42,7 @@ var _ = Describe("Main", func() {
 	Context("CreateUser", func() {
 		BeforeEach(func() {
 			requestUser := models.User{Email: "test@test.com"}
-			r.POST("/", CreateUser())
+			r.POST("/", userController.CreateUser())
 			jsonValue, _ := json.Marshal(requestUser)
 			req, _ = http.NewRequest("POST", "/", bytes.NewBuffer(jsonValue))
 		})

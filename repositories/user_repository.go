@@ -27,11 +27,11 @@ func (r *UserRepository) Create(ctx context.Context, user models.User) error {
 	return nil
 }
 
-func (r *UserRepository) Find(ctx context.Context, userId primitive.ObjectID) error {
+func (r *UserRepository) Find(ctx context.Context, userId primitive.ObjectID) (*models.User, error) {
 	user := &models.User{}
 	err := r.collection.FindOne(ctx, bson.D{{"_id", userId}}).Decode(user)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return user, nil
 }

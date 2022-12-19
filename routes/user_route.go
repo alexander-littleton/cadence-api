@@ -5,8 +5,8 @@ import (
 	"internal/controllers"
 )
 
-func UserRoute(router *gin.Engine) {
-	router.POST("/user", controllers.CreateUser())
+func RegisterUserRoutes(router *gin.Engine, userController *controllers.UserController) {
+	router.POST("/user", userController.CreateUser())
 	router.GET("/user/:userId", controllers.GetUser())
 	router.PUT("/user/:userId", controllers.EditAUser())
 	router.DELETE("/user/:userId", controllers.DeleteAUser())

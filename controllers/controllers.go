@@ -8,16 +8,31 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"internal/configs"
 	"internal/models"
+	"internal/repositories"
 	"internal/responses"
+	userService "internal/services"
 	"net/http"
+	"strings"
 	"time"
 )
 
 var userCollection = configs.GetCollection(configs.DB, "users")
 var validate = validator.New()
 
-func CreateUser() gin.HandlerFunc {
+type UserController struct {
+	userRepository *repositories.UserRepository
+	userService    *userService.UserService
+}
+
+func NewUserController(userRepository *repositories.UserRepository) *UserController {
+	return &UserController{
+		userRepository: userRepository,
+	}
+}
+
+func (r *UserController) CreateUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//TODO: why are we taking a context and creating another one?
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var user models.User
 		defer cancel()
@@ -32,47 +47,65 @@ func CreateUser() gin.HandlerFunc {
 			return
 		}
 
-		//use the validator library to validate required fields
-		if validationErr := validate.Struct(&user); validationErr != nil {
-			c.JSON(http.StatusBadRequest, responses.UserResponse{
-				Status:  http.StatusBadRequest,
-				Message: "error",
-				Data:    map[string]interface{}{"data": validationErr.Error()},
-			})
-			return
-		}
-
-		newUser := models.User{
-			Id:    primitive.NewObjectID(),
-			Email: user.Email,
-		}
-
-		result, err := userCollection.InsertOne(ctx, newUser)
+		createdUser, err := r.userService.CreateUser(c, user)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
-			return
+			var status int
+			if strings.Contains(err.Error(), userService.NewUserValidationErr) {
+				status = http.StatusBadRequest
+			} else {
+				status = http.StatusInternalServerError
+			}
+			c.JSON(
+				status,
+				responses.UserResponse{
+					Status:  status,
+					Message: "error",
+					Data:    map[string]interface{}{"data": err.Error()},
+				},
+			)
 		}
 
-		c.JSON(http.StatusCreated, responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: map[string]interface{}{"data": result}})
+		c.JSON(
+			http.StatusCreated,
+			responses.UserResponse{
+				Status:  http.StatusCreated,
+				Message: "success",
+				Data:    map[string]interface{}{"data": createdUser},
+			},
+		)
 	}
 }
 
-func GetUser() gin.HandlerFunc {
+func (r *UserController) GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//TODO: when should we be using gin context vs regular context?
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		userId := c.Param("userId")
-		var user models.User
+		rawId := c.Param("userId")
 		defer cancel()
 
-		objId, _ := primitive.ObjectIDFromHex(userId)
+		objId, _ := primitive.ObjectIDFromHex(rawId)
 
-		err := userCollection.FindOne(ctx, bson.M{"id": objId}).Decode(&user)
+		user, err := r.userRepository.Find(ctx, objId)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})
+			c.JSON(
+				http.StatusInternalServerError,
+				responses.UserResponse{
+					Status:  http.StatusInternalServerError,
+					Message: "error",
+					Data:    map[string]interface{}{"data": err.Error()},
+				},
+			)
 			return
 		}
 
-		c.JSON(http.StatusOK, responses.UserResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": user}})
+		c.JSON(
+			http.StatusOK,
+			responses.UserResponse{
+				Status:  http.StatusOK,
+				Message: "success",
+				Data:    map[string]interface{}{"data": user},
+			},
+		)
 	}
 }
 
