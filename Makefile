@@ -1,5 +1,5 @@
 build:
-	go main.go
+	go run main.go
 
 test:
 	ginkgo ./...

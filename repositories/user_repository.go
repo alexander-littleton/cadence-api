@@ -5,7 +5,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"internal/configs"
 	"internal/models"
 )
 
@@ -13,9 +12,9 @@ type UserRepository struct {
 	collection *mongo.Collection
 }
 
-func NewUserRepository() *UserRepository {
+func NewUserRepository(collection *mongo.Collection) *UserRepository {
 	return &UserRepository{
-		collection: configs.GetCollection(configs.DB, "users"),
+		collection: collection,
 	}
 }
 

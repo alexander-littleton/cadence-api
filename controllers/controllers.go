@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"internal/configs"
 	"internal/models"
-	"internal/repositories"
 	"internal/responses"
 	userService "internal/services"
 	"net/http"
@@ -19,20 +18,24 @@ import (
 var userCollection = configs.GetCollection(configs.DB, "users")
 var validate = validator.New()
 
-type UserController struct {
-	userRepository *repositories.UserRepository
-	userService    *userService.UserService
+//go:generate mockgen --source=controllers.go --destination=mocks/mock_user_service.go --package=mocks UserService
+type UserService interface {
+	CreateUser(ctx context.Context, user models.User) (models.User, error)
+	GetUser(ctx context.Context, userId primitive.ObjectID) (*models.User, error)
 }
 
-func NewUserController(userRepository *repositories.UserRepository) *UserController {
+type UserController struct {
+	userService UserService
+}
+
+func NewUserController(userService UserService) *UserController {
 	return &UserController{
-		userRepository: userRepository,
+		userService: userService,
 	}
 }
 
 func (r *UserController) CreateUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//TODO: why are we taking a context and creating another one?
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		var user models.User
 		defer cancel()
@@ -47,7 +50,7 @@ func (r *UserController) CreateUser() gin.HandlerFunc {
 			return
 		}
 
-		createdUser, err := r.userService.CreateUser(c, user)
+		createdUser, err := r.userService.CreateUser(ctx, user)
 		if err != nil {
 			var status int
 			if strings.Contains(err.Error(), userService.NewUserValidationErr) {
@@ -78,14 +81,13 @@ func (r *UserController) CreateUser() gin.HandlerFunc {
 
 func (r *UserController) GetUser() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		//TODO: when should we be using gin context vs regular context?
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		rawId := c.Param("userId")
 		defer cancel()
 
 		objId, _ := primitive.ObjectIDFromHex(rawId)
 
-		user, err := r.userRepository.Find(ctx, objId)
+		user, err := r.userService.GetUser(ctx, objId)
 		if err != nil {
 			c.JSON(
 				http.StatusInternalServerError,
