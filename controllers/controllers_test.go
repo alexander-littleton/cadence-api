@@ -4,57 +4,90 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"internal/controllers"
+	"internal/controllers/mocks"
+	"internal/models"
+	"internal/responses"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-
-	. "internal/controllers"
-	"internal/models"
+	"net/url"
 )
 
-func SetUpRouter() *gin.Engine {
-	router := gin.Default()
-	return router
+func GetTestGinContext(w *httptest.ResponseRecorder) *gin.Context {
+	gin.SetMode(gin.TestMode)
+
+	ctx, _ := gin.CreateTestContext(w)
+	ctx.Request = &http.Request{
+		Header: make(http.Header),
+		URL:    &url.URL{},
+	}
+
+	return ctx
+}
+
+func MockJsonPost(c *gin.Context, content any) {
+	c.Request.Method = "POST"
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	jsonbytes, err := json.Marshal(content)
+	if err != nil {
+		panic(err)
+	}
+
+	// the request body must be an io.ReadCloser
+	// the bytes buffer though doesn't implement io.Closer,
+	// so you wrap it in a no-op closer
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
 }
 
 var _ = Describe("Main", func() {
-	//TODO: figure out mocking and mockgen
-	userController := NewUserController(mockUserRepo)
+	var (
+		w           *httptest.ResponseRecorder
+		ctx         *gin.Context
+		ctrl        *gomock.Controller
+		userService *mocks.MockUserService
+		target      *controllers.UserController
+		data        []byte
+	)
 
-	var r *gin.Engine
-	var w *httptest.ResponseRecorder
 	BeforeEach(func() {
-		r = SetUpRouter()
 		w = httptest.NewRecorder()
-	})
+		ctx = GetTestGinContext(w)
+		ctrl = gomock.NewController(GinkgoT())
+		userService = mocks.NewMockUserService(ctrl)
+		target = controllers.NewUserController(userService)
 
-	var req *http.Request
-	var data []byte
-	JustBeforeEach(func() {
-		r.ServeHTTP(w, req)
-		res := w.Result()
-		defer res.Body.Close()
-		data, _ = ioutil.ReadAll(res.Body)
 	})
 
 	Context("CreateUser", func() {
-		BeforeEach(func() {
-			requestUser := models.User{Email: "test@test.com"}
-			r.POST("/", userController.CreateUser())
-			jsonValue, _ := json.Marshal(requestUser)
-			req, _ = http.NewRequest("POST", "/", bytes.NewBuffer(jsonValue))
+		var requestBody any
+		var userResponse responses.UserResponse
+		JustBeforeEach(func() {
+			MockJsonPost(ctx, requestBody)
+			target.CreateUser(ctx)
+			res := w.Result()
+			defer res.Body.Close()
+			data, _ = ioutil.ReadAll(res.Body)
+			json.Unmarshal(data, &userResponse)
 		})
 		Context("the request is valid", func() {
-			It("returns a 201", func() {
+			BeforeEach(func() {
+				requestBody = models.User{Email: "test@test.com"}
+				userService.EXPECT().CreateUser(ctx, requestBody).Return(requestBody, nil)
+			})
+			It("returns a 201 with a success message", func() {
+				Expect(userResponse.Message).To(Equal("success"))
 				Expect(w.Code).To(Equal(201))
-				Expect(string(data)).To(ContainSubstring("InsertedID"))
 			})
 		})
-		Context("the request is invalid", func() {
+		Context("the request is empty", func() {
 			BeforeEach(func() {
-				req, _ = http.NewRequest("POST", "/", nil)
+				requestBody = nil
 			})
 			It("returns a 400 error", func() {
 				Expect(w.Code).To(Equal(400))

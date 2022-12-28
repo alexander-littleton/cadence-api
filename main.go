@@ -11,6 +11,15 @@ import (
 
 func main() {
 	router := gin.Default()
-	//TODO: was there a better pattern for this?
-	routes.RegisterUserRoutes(router, controllers.NewUserController(userService.NewUserService(repositories.NewUserRepository(configs.GetCollection(configs.DB, "users")))))
+
+	routes.RegisterUserRoutes(
+		router,
+		controllers.NewUserController(
+			userService.NewUserService(
+				repositories.NewUserRepository(
+					configs.GetCollection(configs.DB, "users"),
+				),
+			),
+		),
+	)
 }
