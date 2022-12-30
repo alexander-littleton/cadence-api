@@ -1,4 +1,4 @@
-package userservice_test
+package user_service_test
 
 import (
 	"testing"

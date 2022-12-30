@@ -1,12 +1,12 @@
-package userservice_test
+package user_service_test
 
 import (
 	"context"
 	"errors"
 	"github.com/alexander-littleton/cadence-api/internal/common/cadence_errors"
 	"github.com/alexander-littleton/cadence-api/internal/models"
-	userService "github.com/alexander-littleton/cadence-api/internal/services"
-	"github.com/alexander-littleton/cadence-api/internal/services/mocks"
+	userService "github.com/alexander-littleton/cadence-api/internal/services/user_service"
+	"github.com/alexander-littleton/cadence-api/internal/services/user_service/mocks"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

@@ -6,7 +6,7 @@ import (
 	"github.com/alexander-littleton/cadence-api/internal/controllers"
 	"github.com/alexander-littleton/cadence-api/internal/repositories"
 	"github.com/alexander-littleton/cadence-api/internal/routes"
-	userService "github.com/alexander-littleton/cadence-api/internal/services"
+	userService "github.com/alexander-littleton/cadence-api/internal/services/user_service"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
