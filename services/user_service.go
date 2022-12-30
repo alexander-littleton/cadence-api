@@ -1,4 +1,4 @@
-package userService
+package user_service
 
 import (
 	"context"
@@ -49,8 +49,6 @@ func (r *UserService) validateNewUser(ctx context.Context, user models.User) (mo
 	if !user.Id.IsZero() {
 		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, "expected a user without an id")
 	}
-
-	user.Id = primitive.NewObjectID()
 
 	_, err := r.GetUserByEmail(ctx, user.Email)
 	if err != nil && !errors.Is(err, ErrNotFound) {
