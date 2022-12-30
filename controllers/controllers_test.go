@@ -94,13 +94,13 @@ var _ = Describe("Main", func() {
 				Expect(w.Code).To(Equal(201))
 			})
 		})
-		Context("unable to validate new user", func() {
+		Context("new user fails validation", func() {
 			BeforeEach(func() {
 				requestBody = models.User{Email: ""}
 				userService.EXPECT().CreateUser(ctx, requestBody).
 					Return(models.User{}, cadence_errors.ValidationErr)
 			})
-			It("returns a 400 error", func() {
+			It("returns a 400 with an error", func() {
 				output := map[string]interface{}{"data": cadence_errors.ValidationErr.Error()}
 				Expect(userResponse.Data).To(Equal(output))
 				Expect(w.Code).To(Equal(400))
