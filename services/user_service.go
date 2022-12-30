@@ -53,7 +53,7 @@ func (r *UserService) validateNewUser(ctx context.Context, user models.User) (mo
 	user.Id = primitive.NewObjectID()
 
 	_, err := r.GetUserByEmail(ctx, user.Email)
-	if err != nil && !errors.As(err, &ErrNotFound) {
+	if err != nil && !errors.Is(err, ErrNotFound) {
 		return models.User{}, fmt.Errorf("%s: %w", "failed to get user by email", err)
 	} else if err == nil {
 		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, "user with email already exists")
