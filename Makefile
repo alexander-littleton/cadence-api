@@ -3,3 +3,6 @@ build:
 
 test:
 	ginkgo ./...
+
+db:
+	brew services start mongodb-community
