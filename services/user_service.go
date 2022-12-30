@@ -1,4 +1,4 @@
-package user_service
+package userservice
 
 import (
 	"context"
@@ -36,6 +36,8 @@ func (r *UserService) CreateUser(ctx context.Context, user models.User) (models.
 	if err != nil {
 		return models.User{}, err
 	}
+
+	validatedUser.Id = primitive.NewObjectID()
 
 	err = r.userRepository.CreateUser(ctx, validatedUser)
 	if err != nil {
