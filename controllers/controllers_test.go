@@ -3,17 +3,16 @@ package controllers_test
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"internal/common/cadence_errors"
 	"internal/controllers"
 	"internal/controllers/mocks"
 	"internal/models"
 	"internal/responses"
-	realUserService "internal/services"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -99,10 +98,10 @@ var _ = Describe("Main", func() {
 			BeforeEach(func() {
 				requestBody = models.User{Email: ""}
 				userService.EXPECT().CreateUser(ctx, requestBody).
-					Return(models.User{}, errors.New(realUserService.NewUserValidationErr))
+					Return(models.User{}, cadence_errors.ValidationErr)
 			})
 			It("returns a 400 error", func() {
-				output := map[string]interface{}{"data": realUserService.NewUserValidationErr}
+				output := map[string]interface{}{"data": cadence_errors.ValidationErr.Error()}
 				Expect(userResponse.Data).To(Equal(output))
 				Expect(w.Code).To(Equal(400))
 			})
