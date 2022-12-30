@@ -3,6 +3,7 @@ package controllers_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
@@ -104,6 +105,18 @@ var _ = Describe("Main", func() {
 				output := map[string]interface{}{"data": cadence_errors.ValidationErr.Error()}
 				Expect(userResponse.Data).To(Equal(output))
 				Expect(w.Code).To(Equal(400))
+			})
+		})
+		Context("there was an error during processing", func() {
+			BeforeEach(func() {
+				requestBody = models.User{Email: ""}
+				userService.EXPECT().CreateUser(ctx, requestBody).
+					Return(models.User{}, errors.New("boom"))
+			})
+			It("returns a 500 with an error", func() {
+				output := map[string]interface{}{"data": "boom"}
+				Expect(userResponse.Data).To(Equal(output))
+				Expect(w.Code).To(Equal(500))
 			})
 		})
 	})

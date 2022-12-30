@@ -49,9 +49,10 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 	createdUser, err := r.userService.CreateUser(ctx, user)
 	if err != nil {
 		var status int
-		if errors.As(err, &cadence_errors.ValidationErr) {
+		if errors.Is(err, cadence_errors.ValidationErr) {
 			status = http.StatusBadRequest
 		} else {
+			fmt.Println("here")
 			status = http.StatusInternalServerError
 		}
 		ctx.JSON(
