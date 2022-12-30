@@ -2,17 +2,19 @@ package main
 
 import (
 	"fmt"
+	"github.com/alexander-littleton/cadence-api/configs"
+	"github.com/alexander-littleton/cadence-api/internal/controllers"
+	"github.com/alexander-littleton/cadence-api/internal/repositories"
+	"github.com/alexander-littleton/cadence-api/internal/routes"
+	userService "github.com/alexander-littleton/cadence-api/internal/services"
 	"github.com/gin-gonic/gin"
-	"internal/configs"
-	"internal/controllers"
-	"internal/repositories"
-	"internal/routes"
-	userService "internal/services"
+	"github.com/go-playground/validator/v10"
 )
 
 func main() {
 	//TODO: setup trusted proxies
 	router := gin.Default()
+	validate := validator.New()
 
 	routes.RegisterUserRoutes(
 		router,
@@ -21,6 +23,7 @@ func main() {
 				repositories.NewUserRepository(
 					configs.GetCollection(configs.DB, "users"),
 				),
+				validate,
 			),
 		),
 	)

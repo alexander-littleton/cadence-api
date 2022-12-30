@@ -4,30 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-playground/validator/v10"
+	. "github.com/alexander-littleton/cadence-api/internal/common/cadence_errors"
+	"github.com/alexander-littleton/cadence-api/internal/models"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	. "internal/common/cadence_errors"
 	"net/mail"
-
-	"internal/models"
 )
-
-var validate = validator.New()
-
-//go:generate mockgen --source=user_service.go --destination=mocks/mock_user_repository.go --package=mocks UserRepository
-type UserRepository interface {
-	CreateUser(ctx context.Context, user models.User) error
-	GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error)
-	GetUserByEmail(ctx context.Context, email string) (models.User, error)
-}
 
 type UserService struct {
 	userRepository UserRepository
+	validator      Validator
 }
 
-func NewUserService(userRepo UserRepository) *UserService {
+func NewUserService(userRepo UserRepository, validator Validator) *UserService {
 	return &UserService{
 		userRepository: userRepo,
+		validator:      validator,
 	}
 }
 
@@ -59,7 +50,7 @@ func (r *UserService) validateNewUser(ctx context.Context, user models.User) (mo
 		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, "user with email already exists")
 	}
 
-	err = validate.Struct(&user)
+	err = r.validator.Struct(&user)
 	if err != nil {
 		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, err.Error())
 	}

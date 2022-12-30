@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alexander-littleton/cadence-api/internal/common/cadence_errors"
+	"github.com/alexander-littleton/cadence-api/internal/models"
+	"github.com/alexander-littleton/cadence-api/internal/responses"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"internal/common/cadence_errors"
-	"internal/models"
-	"internal/responses"
 	"net/http"
 )
 

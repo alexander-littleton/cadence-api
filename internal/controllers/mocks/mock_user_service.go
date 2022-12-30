@@ -6,9 +6,9 @@ package mocks
 
 import (
 	context "context"
-	models "internal/models"
 	reflect "reflect"
 
+	models "github.com/alexander-littleton/cadence-api/internal/models"
 	gomock "github.com/golang/mock/gomock"
 	primitive "go.mongodb.org/mongo-driver/bson/primitive"
 )

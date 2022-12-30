@@ -1,4 +1,4 @@
-module internal
+module github.com/alexander-littleton/cadence-api
 
 go 1.18
 
