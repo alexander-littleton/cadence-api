@@ -12,13 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - uses: actions/setup-go@v3
     - uses: actions/checkout@v3
-
-    - name: Install dependencies
-      run: go get ./...
-
-    - name: Run test
-      run: make test
-
-    - name: Run build
-      run: go build
+    - run: go vet ./...
+    - run: go run ./ginkgo -r -randomize-all -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s
