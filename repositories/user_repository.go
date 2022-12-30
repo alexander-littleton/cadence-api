@@ -18,7 +18,7 @@ func NewUserRepository(collection *mongo.Collection) *UserRepository {
 	}
 }
 
-func (r *UserRepository) Create(ctx context.Context, user models.User) error {
+func (r *UserRepository) CreateUser(ctx context.Context, user models.User) error {
 	_, err := r.collection.InsertOne(ctx, user)
 	if err != nil {
 		return err
@@ -26,11 +26,21 @@ func (r *UserRepository) Create(ctx context.Context, user models.User) error {
 	return nil
 }
 
-func (r *UserRepository) Find(ctx context.Context, userId primitive.ObjectID) (*models.User, error) {
+func (r *UserRepository) GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error) {
 	user := &models.User{}
 	err := r.collection.FindOne(ctx, bson.D{{"_id", userId}}).Decode(user)
 	if err != nil {
-		return nil, err
+		return models.User{}, err
 	}
-	return user, nil
+	//TODO: ensure empty user is handled during error catch
+	return *user, nil
+}
+
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
+	user := &models.User{}
+	err := r.collection.FindOne(ctx, bson.D{{"email", email}}).Decode(user)
+	if err != nil {
+		return models.User{}, err
+	}
+	return *user, nil
 }

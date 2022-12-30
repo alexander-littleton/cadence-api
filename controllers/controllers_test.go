@@ -3,14 +3,17 @@ package controllers_test
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"internal/controllers"
 	"internal/controllers/mocks"
 	"internal/models"
 	"internal/responses"
+	realUserService "internal/services"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -65,7 +68,7 @@ var _ = Describe("Main", func() {
 	})
 
 	Context("CreateUser", func() {
-		var requestBody any
+		var requestBody models.User
 		var userResponse responses.UserResponse
 		JustBeforeEach(func() {
 			MockJsonPost(ctx, requestBody)
@@ -76,22 +79,32 @@ var _ = Describe("Main", func() {
 			json.Unmarshal(data, &userResponse)
 		})
 		Context("the request is valid", func() {
+			var newUser models.User
 			BeforeEach(func() {
 				requestBody = models.User{Email: "test@test.com"}
-				userService.EXPECT().CreateUser(ctx, requestBody).Return(requestBody, nil)
+				newUser = models.User{Id: primitive.NewObjectID(), Email: requestBody.Email}
+				userService.EXPECT().CreateUser(ctx, requestBody).Return(newUser, nil)
 			})
-			It("returns a 201 with a success message", func() {
+			It("returns a 201 with a success message and the newly created user", func() {
+				output := map[string]interface{}{"data": map[string]interface{}{
+					"email": newUser.Email,
+					"id":    newUser.Id.Hex(),
+				}}
+				Expect(userResponse.Data).To(Equal(output))
 				Expect(userResponse.Message).To(Equal("success"))
 				Expect(w.Code).To(Equal(201))
 			})
 		})
-		Context("the request is empty", func() {
+		Context("unable to validate new user", func() {
 			BeforeEach(func() {
-				requestBody = nil
+				requestBody = models.User{Email: ""}
+				userService.EXPECT().CreateUser(ctx, requestBody).
+					Return(models.User{}, errors.New(realUserService.NewUserValidationErr))
 			})
 			It("returns a 400 error", func() {
+				output := map[string]interface{}{"data": realUserService.NewUserValidationErr}
+				Expect(userResponse.Data).To(Equal(output))
 				Expect(w.Code).To(Equal(400))
-				Expect(string(data)).To(ContainSubstring("invalid request"))
 			})
 		})
 	})

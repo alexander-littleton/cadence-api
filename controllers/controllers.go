@@ -4,23 +4,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"net/http"
-	"strings"
-	"time"
-
 	"internal/models"
 	"internal/responses"
 	userService "internal/services"
+	"net/http"
+	"strings"
 )
-
-var validate = validator.New()
 
 //go:generate mockgen --source=controllers.go --destination=mocks/mock_user_service.go --package=mocks UserService
 type UserService interface {
 	CreateUser(ctx context.Context, user models.User) (models.User, error)
-	GetUser(ctx context.Context, userId primitive.ObjectID) (*models.User, error)
+	GetUserById(ctx context.Context, userId primitive.ObjectID) (*models.User, error)
 }
 
 type UserController struct {
@@ -38,8 +33,7 @@ type CreateUserRequest struct {
 }
 
 func (r *UserController) CreateUser(ctx *gin.Context) {
-	var user CreateUserRequest
-	//TODO: validate the request body
+	var user models.User
 	if err := ctx.BindJSON(&user); err != nil {
 		ctx.JSON(http.StatusBadRequest, responses.UserResponse{
 			Status:  http.StatusBadRequest,
@@ -51,22 +45,10 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	validate := validator.New()
-	err := validate.Struct(user)
-	if err != nil {
-		fmt.Println(err)
-		ctx.JSON(http.StatusBadRequest, responses.UserResponse{
-			Status:  http.StatusBadRequest,
-			Message: "error",
-			Data: map[string]interface{}{
-				"data": fmt.Sprint("failed to validate user: ", err.Error()),
-			},
-		})
-	}
 	createdUser, err := r.userService.CreateUser(ctx, user)
 	if err != nil {
 		var status int
-		//TODO: try to switch this over to a errors.in()
+		//TODO: try to switch this over to a errors.is()
 		if strings.Contains(err.Error(), userService.NewUserValidationErr) {
 			status = http.StatusBadRequest
 		} else {
@@ -94,36 +76,31 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 	return
 }
 
-func (r *UserController) GetUser() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		rawId := c.Param("userId")
-		defer cancel()
+func (r *UserController) GetUserById(ctx *gin.Context) {
+	rawId := ctx.Param("userId")
+	objId, _ := primitive.ObjectIDFromHex(rawId)
 
-		objId, _ := primitive.ObjectIDFromHex(rawId)
-
-		user, err := r.userService.GetUser(ctx, objId)
-		if err != nil {
-			c.JSON(
-				http.StatusInternalServerError,
-				responses.UserResponse{
-					Status:  http.StatusInternalServerError,
-					Message: "error",
-					Data:    map[string]interface{}{"data": err.Error()},
-				},
-			)
-			return
-		}
-
-		c.JSON(
-			http.StatusOK,
+	user, err := r.userService.GetUserById(ctx, objId)
+	if err != nil {
+		ctx.JSON(
+			http.StatusInternalServerError,
 			responses.UserResponse{
-				Status:  http.StatusOK,
-				Message: "success",
-				Data:    map[string]interface{}{"data": user},
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": err.Error()},
 			},
 		)
+		return
 	}
+
+	ctx.JSON(
+		http.StatusOK,
+		responses.UserResponse{
+			Status:  http.StatusOK,
+			Message: "success",
+			Data:    map[string]interface{}{"data": user},
+		},
+	)
 }
 
 //func EditAUser() gin.HandlerFunc {
@@ -203,7 +180,7 @@ func (r *UserController) GetUser() gin.HandlerFunc {
 //		var users []models.User
 //		defer cancel()
 //
-//		results, err := userCollection.Find(ctx, bson.M{})
+//		results, err := userCollection.GetUserById(ctx, bson.M{})
 //
 //		if err != nil {
 //			c.JSON(http.StatusInternalServerError, responses.UserResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}})

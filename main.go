@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"internal/configs"
 	"internal/controllers"
@@ -22,4 +23,8 @@ func main() {
 			),
 		),
 	)
+	err := router.Run("localhost:8080")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 }

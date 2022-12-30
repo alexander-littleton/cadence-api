@@ -51,17 +51,17 @@ func (mr *MockUserServiceMockRecorder) CreateUser(ctx, user interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserService)(nil).CreateUser), ctx, user)
 }
 
-// GetUser mocks base method.
-func (m *MockUserService) GetUser(ctx context.Context, userId primitive.ObjectID) (*models.User, error) {
+// GetUserById mocks base method.
+func (m *MockUserService) GetUserById(ctx context.Context, userId primitive.ObjectID) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUser", ctx, userId)
+	ret := m.ctrl.Call(m, "GetUserById", ctx, userId)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetUser indicates an expected call of GetUser.
-func (mr *MockUserServiceMockRecorder) GetUser(ctx, userId interface{}) *gomock.Call {
+// GetUserById indicates an expected call of GetUserById.
+func (mr *MockUserServiceMockRecorder) GetUserById(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockUserService)(nil).GetUser), ctx, userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserById", reflect.TypeOf((*MockUserService)(nil).GetUserById), ctx, userId)
 }
