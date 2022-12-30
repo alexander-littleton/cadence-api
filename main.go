@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	//TODO: setup trusted proxies
 	router := gin.Default()
 
 	routes.RegisterUserRoutes(

@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/mail"
-
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	. "internal/common/cadence_errors"
+	"net/mail"
 
 	"internal/models"
 )
@@ -34,7 +34,7 @@ func NewUserService(userRepo UserRepository) *UserService {
 func (r *UserService) CreateUser(ctx context.Context, user models.User) (models.User, error) {
 	validatedUser, err := r.validateNewUser(ctx, user)
 	if err != nil {
-		return models.User{}, fmt.Errorf("%s: %w", NewUserValidationErr, err)
+		return models.User{}, err
 	}
 
 	err = r.userRepository.CreateUser(ctx, validatedUser)
@@ -47,29 +47,28 @@ func (r *UserService) CreateUser(ctx context.Context, user models.User) (models.
 
 func (r *UserService) validateNewUser(ctx context.Context, user models.User) (models.User, error) {
 	if !user.Id.IsZero() {
-		return models.User{}, errors.New("expected a user without an id")
+		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, "expected a user without an id")
 	}
 
 	user.Id = primitive.NewObjectID()
 
-	if _, err := mail.ParseAddress(user.Email); err != nil {
-		return models.User{}, errors.New("invalid email address")
-	}
-
 	_, err := r.GetUserByEmail(ctx, user.Email)
-	if err != nil {
+	if err != nil && !errors.As(err, &ErrNotFound) {
+		return models.User{}, fmt.Errorf("%s: %w", "failed to get user by email", err)
+	} else if err == nil {
+		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, "user with email already exists")
 	}
 
 	err = validate.Struct(&user)
 	if err != nil {
-		return models.User{}, err
+		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, err.Error())
 	}
 	return user, nil
 }
 
 func (r *UserService) GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error) {
 	if userId.IsZero() {
-		return models.User{}, errors.New("valid user id must be provided")
+		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, "valid user id must be provided")
 	}
 	user, err := r.userRepository.GetUserById(ctx, userId)
 	if err != nil {
@@ -80,7 +79,7 @@ func (r *UserService) GetUserById(ctx context.Context, userId primitive.ObjectID
 
 func (r *UserService) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	if _, err := mail.ParseAddress(email); err != nil {
-		return models.User{}, errors.New("invalid email address")
+		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, err.Error())
 	}
 
 	user, err := r.userRepository.GetUserByEmail(ctx, email)

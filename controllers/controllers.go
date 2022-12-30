@@ -2,20 +2,21 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"internal/common/cadence_errors"
 	"internal/models"
 	"internal/responses"
-	userService "internal/services"
 	"net/http"
-	"strings"
 )
 
 //go:generate mockgen --source=controllers.go --destination=mocks/mock_user_service.go --package=mocks UserService
 type UserService interface {
 	CreateUser(ctx context.Context, user models.User) (models.User, error)
-	GetUserById(ctx context.Context, userId primitive.ObjectID) (*models.User, error)
+	GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (models.User, error)
 }
 
 type UserController struct {
@@ -48,8 +49,7 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 	createdUser, err := r.userService.CreateUser(ctx, user)
 	if err != nil {
 		var status int
-		//TODO: try to switch this over to a errors.is()
-		if strings.Contains(err.Error(), userService.NewUserValidationErr) {
+		if errors.As(err, &cadence_errors.ValidationErr) {
 			status = http.StatusBadRequest
 		} else {
 			status = http.StatusInternalServerError
@@ -81,6 +81,33 @@ func (r *UserController) GetUserById(ctx *gin.Context) {
 	objId, _ := primitive.ObjectIDFromHex(rawId)
 
 	user, err := r.userService.GetUserById(ctx, objId)
+	if err != nil {
+		ctx.JSON(
+			http.StatusInternalServerError,
+			responses.UserResponse{
+				Status:  http.StatusInternalServerError,
+				Message: "error",
+				Data:    map[string]interface{}{"data": err.Error()},
+			},
+		)
+		return
+	}
+
+	ctx.JSON(
+		http.StatusOK,
+		responses.UserResponse{
+			Status:  http.StatusOK,
+			Message: "success",
+			Data:    map[string]interface{}{"data": user},
+		},
+	)
+}
+
+func (r *UserController) GetUserByEmail(ctx *gin.Context) {
+	email := ctx.Param("email")
+
+	user, err := r.userService.GetUserByEmail(ctx, email)
+	//TODO: handle validation errors
 	if err != nil {
 		ctx.JSON(
 			http.StatusInternalServerError,

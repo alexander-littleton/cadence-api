@@ -51,11 +51,26 @@ func (mr *MockUserServiceMockRecorder) CreateUser(ctx, user interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserService)(nil).CreateUser), ctx, user)
 }
 
+// GetUserByEmail mocks base method.
+func (m *MockUserService) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserByEmail", ctx, email)
+	ret0, _ := ret[0].(models.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserByEmail indicates an expected call of GetUserByEmail.
+func (mr *MockUserServiceMockRecorder) GetUserByEmail(ctx, email interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserService)(nil).GetUserByEmail), ctx, email)
+}
+
 // GetUserById mocks base method.
-func (m *MockUserService) GetUserById(ctx context.Context, userId primitive.ObjectID) (*models.User, error) {
+func (m *MockUserService) GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserById", ctx, userId)
-	ret0, _ := ret[0].(*models.User)
+	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
