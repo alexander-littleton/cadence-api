@@ -52,7 +52,6 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 		if errors.Is(err, cadence_errors.ValidationErr) {
 			status = http.StatusBadRequest
 		} else {
-			fmt.Println("here")
 			status = http.StatusInternalServerError
 		}
 		ctx.JSON(
