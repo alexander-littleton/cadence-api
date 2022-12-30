@@ -28,7 +28,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) error
 
 func (r *UserRepository) GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error) {
 	user := &models.User{}
-	err := r.collection.FindOne(ctx, bson.D{{"_id", userId}}).Decode(user)
+	err := r.collection.FindOne(ctx, bson.D{{Key: "_id", Value: userId}}).Decode(user)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -38,7 +38,7 @@ func (r *UserRepository) GetUserById(ctx context.Context, userId primitive.Objec
 
 func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	user := &models.User{}
-	err := r.collection.FindOne(ctx, bson.D{{"email", email}}).Decode(user)
+	err := r.collection.FindOne(ctx, bson.D{{Key: "email", Value: email}}).Decode(user)
 	if err != nil {
 		return models.User{}, err
 	}
