@@ -79,6 +79,10 @@ func (r *UserService) GetUserById(ctx context.Context, userId primitive.ObjectID
 }
 
 func (r *UserService) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
+	if _, err := mail.ParseAddress(email); err != nil {
+		return models.User{}, errors.New("invalid email address")
+	}
+
 	user, err := r.userRepository.GetUserByEmail(ctx, email)
 	if err != nil {
 		return models.User{}, fmt.Errorf("failed to get user with email %s: %w", email, err)
