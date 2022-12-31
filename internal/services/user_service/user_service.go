@@ -68,6 +68,8 @@ func (r *UserService) GetUserById(ctx context.Context, userId primitive.ObjectID
 	return user, nil
 }
 
+//GetUserByEmail takes an email, validates it, then returns the user with matching email. If a user does not exist in
+//the db, then it will return an error.
 func (r *UserService) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	if _, err := mail.ParseAddress(email); err != nil {
 		return models.User{}, fmt.Errorf("%w: %s", ValidationErr, err.Error())
