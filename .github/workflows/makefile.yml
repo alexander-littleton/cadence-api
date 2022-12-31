@@ -1,4 +1,4 @@
-name: Makefile CI
+name: Build & Test
 
 on:
   push:
@@ -15,4 +15,5 @@ jobs:
     - uses: actions/setup-go@v3
     - uses: actions/checkout@v3
     - run: go vet ./...
-    - run: go run ./ginkgo -r -randomize-all -randomize-suites -race -trace -procs=2 -poll-progress-after=10s -poll-progress-interval=10s
+    - run: go build
+    - run: go test ./...
