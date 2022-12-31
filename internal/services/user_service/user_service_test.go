@@ -64,6 +64,7 @@ var _ = Describe("Main", func() {
 			It("returns a validation Err", func() {
 				Expect(err).To(Not(BeNil()))
 				Expect(errors.Is(err, cadence_errors.ValidationErr)).To(BeTrue())
+				Expect(createdUser).To(Equal(models.User{}))
 			})
 		})
 		Context("failed to get existing user with matching email", func() {
@@ -73,6 +74,7 @@ var _ = Describe("Main", func() {
 			It("returns an error", func() {
 				Expect(err).To(Not(BeNil()))
 				Expect(err.Error()).To(ContainSubstring("failed to get user by email"))
+				Expect(createdUser).To(Equal(models.User{}))
 			})
 		})
 		Context("a user with matching email already exists", func() {
@@ -82,6 +84,7 @@ var _ = Describe("Main", func() {
 			It("returns a validation Err", func() {
 				Expect(err).To(Not(BeNil()))
 				Expect(errors.Is(err, cadence_errors.ValidationErr)).To(BeTrue())
+				Expect(createdUser).To(Equal(models.User{}))
 			})
 		})
 		Context("the repository layer returns an error", func() {
@@ -92,6 +95,7 @@ var _ = Describe("Main", func() {
 			It("returns a validation error", func() {
 				Expect(err).To(Not(BeNil()))
 				Expect(errors.Is(err, cadence_errors.ValidationErr)).To(BeTrue())
+				Expect(createdUser).To(Equal(models.User{}))
 			})
 		})
 		Context("the repository layer returns an error", func() {
@@ -105,6 +109,84 @@ var _ = Describe("Main", func() {
 			It("returns an error", func() {
 				Expect(err).To(Not(BeNil()))
 				Expect(err.Error()).To(ContainSubstring("failed to create user"))
+				Expect(createdUser).To(Equal(models.User{}))
+			})
+		})
+	})
+	Context("GetUserById", func() {
+		var (
+			userId       primitive.ObjectID
+			expectedUser models.User
+			user         models.User
+			err          error
+		)
+		JustBeforeEach(func() {
+			expectedUser, err = target.GetUserById(ctx, userId)
+		})
+		Context("the request is valid", func() {
+			BeforeEach(func() {
+				userId = primitive.NewObjectID()
+				user = models.User{Id: userId, Email: "test@test.com"}
+				userRepo.EXPECT().GetUserById(ctx, userId).Return(user, nil)
+			})
+			It("returns a valid user", func() {
+				Expect(err).To(BeNil())
+				Expect(expectedUser).To(Equal(user))
+			})
+		})
+		Context("userId is zero", func() {
+			BeforeEach(func() {
+				user = models.User{Email: "test@test.com"}
+				userId = user.Id
+			})
+			It("returns a validation error ", func() {
+				Expect(err).To(Not(BeNil()))
+				Expect(errors.Is(err, cadence_errors.ValidationErr)).To(BeTrue())
+				Expect(expectedUser).To(Equal(models.User{}))
+			})
+		})
+	})
+	Context("GetUserByEmail", func() {
+		var (
+			user         models.User
+			expectedUser models.User
+			err          error
+			email        string
+		)
+		JustBeforeEach(func() {
+			user, err = target.GetUserByEmail(ctx, email)
+		})
+		Context("the email is valid and a user exists", func() {
+			BeforeEach(func() {
+				email = "test@test.com"
+				expectedUser = models.User{Id: primitive.NewObjectID(), Email: email}
+				userRepo.EXPECT().GetUserByEmail(ctx, email).Return(expectedUser, nil)
+			})
+			It("returns a user", func() {
+				Expect(err).To(BeNil())
+				Expect(user).To(Equal(expectedUser))
+			})
+		})
+		Context("the email is invalid", func() {
+			BeforeEach(func() {
+				email = ""
+			})
+			It("returns a validation error", func() {
+				Expect(err).To(Not(BeNil()))
+				Expect(errors.Is(err, cadence_errors.ValidationErr)).To(BeTrue())
+				Expect(user).To(Equal(models.User{}))
+			})
+		})
+		Context("the repository layer returns an error", func() {
+			BeforeEach(func() {
+				email = "test@test.com"
+				expectedUser = models.User{Id: primitive.NewObjectID(), Email: email}
+				userRepo.EXPECT().GetUserByEmail(ctx, email).Return(models.User{}, errors.New("boom"))
+			})
+			It("returns an error", func() {
+				Expect(err).To(Not(BeNil()))
+				Expect(err.Error()).To(ContainSubstring("failed to get user with email"))
+				Expect(user).To(Equal(models.User{}))
 			})
 		})
 	})
