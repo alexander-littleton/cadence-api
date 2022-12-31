@@ -121,13 +121,13 @@ var _ = Describe("Main", func() {
 			err          error
 		)
 		JustBeforeEach(func() {
-			expectedUser, err = target.GetUserById(ctx, userId)
+			user, err = target.GetUserById(ctx, userId)
 		})
 		Context("the request is valid", func() {
 			BeforeEach(func() {
 				userId = primitive.NewObjectID()
-				user = models.User{Id: userId, Email: "test@test.com"}
-				userRepo.EXPECT().GetUserById(ctx, userId).Return(user, nil)
+				expectedUser = models.User{Id: userId, Email: "test@test.com"}
+				userRepo.EXPECT().GetUserById(ctx, userId).Return(expectedUser, nil)
 			})
 			It("returns a valid user", func() {
 				Expect(err).To(BeNil())
@@ -136,13 +136,13 @@ var _ = Describe("Main", func() {
 		})
 		Context("userId is zero", func() {
 			BeforeEach(func() {
-				user = models.User{Email: "test@test.com"}
-				userId = user.Id
+				expectedUser = models.User{Email: "test@test.com"}
+				userId = expectedUser.Id
 			})
 			It("returns a validation error ", func() {
 				Expect(err).To(Not(BeNil()))
 				Expect(errors.Is(err, cadence_errors.ValidationErr)).To(BeTrue())
-				Expect(expectedUser).To(Equal(models.User{}))
+				Expect(user).To(Equal(models.User{}))
 			})
 		})
 	})
