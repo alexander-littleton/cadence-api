@@ -6,7 +6,7 @@ import (
 	"github.com/alexander-littleton/cadence-api/pkg/common/cadence_errors"
 	"github.com/alexander-littleton/cadence-api/pkg/user"
 	"github.com/alexander-littleton/cadence-api/pkg/user/domain"
-	"github.com/alexander-littleton/cadence-api/pkg/user/mocks"
+	mockRepo "github.com/alexander-littleton/cadence-api/pkg/user/repositories/mocks"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -16,18 +16,16 @@ import (
 
 var _ = Describe("Main", func() {
 	var (
-		ctrl      *gomock.Controller
-		userRepo  *mocks.MockUserRepository
-		validator *mocks.MockValidator
-		target    user.Service
-		ctx       context.Context
+		ctrl     *gomock.Controller
+		userRepo *mockRepo.MockUserRepository
+		target   user.Service
+		ctx      context.Context
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		userRepo = mocks.NewMockUserRepository(ctrl)
-		validator = mocks.NewMockValidator(ctrl)
-		target = user.New(userRepo, validator)
+		userRepo = mockRepo.NewMockUserRepository(ctrl)
+		target = user.New(userRepo)
 		ctx = context.TODO()
 	})
 
@@ -46,7 +44,6 @@ var _ = Describe("Main", func() {
 		Context("the new user is valid", func() {
 			BeforeEach(func() {
 				userRepo.EXPECT().GetUserByEmail(ctx, user.Email).Return(domain.User{}, cadence_errors.ErrNotFound)
-				validator.EXPECT().Struct(&user).Return(nil)
 				userRepo.EXPECT().CreateUser(ctx, mock.MatchedBy(func(u domain.User) bool {
 					return u.Email == user.Email
 				})).Return(nil)
@@ -90,7 +87,6 @@ var _ = Describe("Main", func() {
 		Context("the repository layer returns an error", func() {
 			BeforeEach(func() {
 				userRepo.EXPECT().GetUserByEmail(ctx, user.Email).Return(domain.User{}, cadence_errors.ErrNotFound)
-				validator.EXPECT().Struct(&user).Return(errors.New("boom"))
 			})
 			It("returns a validation error", func() {
 				Expect(err).To(Not(BeNil()))
@@ -101,7 +97,6 @@ var _ = Describe("Main", func() {
 		Context("the repository layer returns an error", func() {
 			BeforeEach(func() {
 				userRepo.EXPECT().GetUserByEmail(ctx, user.Email).Return(domain.User{}, cadence_errors.ErrNotFound)
-				validator.EXPECT().Struct(&user).Return(nil)
 				userRepo.EXPECT().CreateUser(ctx, mock.MatchedBy(func(u domain.User) bool {
 					return u.Email == user.Email
 				})).Return(errors.New("boom"))
