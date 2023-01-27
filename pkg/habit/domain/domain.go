@@ -1,4 +1,4 @@
-package models
+package domain
 
 type Habit struct {
 	Id            string   `json:"id"`

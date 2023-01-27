@@ -1,52 +1,49 @@
-package controllers
+package api
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/alexander-littleton/cadence-api/internal/common/cadence_errors"
-	"github.com/alexander-littleton/cadence-api/internal/models"
-	"github.com/alexander-littleton/cadence-api/internal/responses"
+	"github.com/alexander-littleton/cadence-api/pkg/common/cadence_errors"
+	userService "github.com/alexander-littleton/cadence-api/pkg/user"
+	"github.com/alexander-littleton/cadence-api/pkg/user/domain"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 )
 
-//go:generate mockgen --source=controllers.go --destination=mocks/mock_user_service.go --package=mocks UserService
-type UserService interface {
-	CreateUser(ctx context.Context, user models.User) (models.User, error)
-	GetUserById(ctx context.Context, userId primitive.ObjectID) (models.User, error)
-	GetUserByEmail(ctx context.Context, email string) (models.User, error)
+type Controller struct {
+	userService userService.Service
 }
 
-type UserController struct {
-	userService UserService
-}
-
-func NewUserController(userService UserService) *UserController {
-	return &UserController{
+func New(userService userService.Service) Controller {
+	return Controller{
 		userService: userService,
 	}
 }
 
-type CreateUserRequest struct {
-	Email string `json:"email,omitempty" validate:"required"`
+func (r Controller) RegisterRoutes(router *gin.Engine) {
+	router.POST("/user", r.createUser)
+	router.GET("/user/:email", r.GetUserByEmail)
+	//router.PUT("/user/:userId", userController.EditAUser())
+	//router.DELETE("/user/:userId", userController.DeleteAUser())
+	//router.GET("/users", controllers.GetAllUsers())
 }
 
-func (r *UserController) CreateUser(ctx *gin.Context) {
-	var user models.User
-	if err := ctx.BindJSON(&user); err != nil {
-		ctx.JSON(http.StatusBadRequest, responses.UserResponse{
+func (r Controller) createUser(ctx *gin.Context) {
+	var newUser domain.User
+	fmt.Printf("%+v\n", ctx)
+	if err := ctx.BindJSON(&newUser); err != nil {
+		ctx.JSON(http.StatusBadRequest, domain.UserResponse{
 			Status:  http.StatusBadRequest,
 			Message: "error",
 			Data: map[string]interface{}{
-				"data": fmt.Sprint("failed to unmarshal user from request body: ", err.Error()),
+				"data": fmt.Sprint("failed to unmarshal new user from request body: ", err.Error()),
 			},
 		})
 		return
 	}
 
-	createdUser, err := r.userService.CreateUser(ctx, user)
+	createdUser, err := r.userService.CreateUser(ctx, newUser)
 	if err != nil {
 		var status int
 		if errors.Is(err, cadence_errors.ValidationErr) {
@@ -56,7 +53,7 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 		}
 		ctx.JSON(
 			status,
-			responses.UserResponse{
+			domain.UserResponse{
 				Status:  status,
 				Message: "error",
 				Data:    map[string]interface{}{"data": err.Error()},
@@ -67,7 +64,7 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 
 	ctx.JSON(
 		http.StatusCreated,
-		responses.UserResponse{
+		domain.UserResponse{
 			Status:  http.StatusCreated,
 			Message: "success",
 			Data:    map[string]interface{}{"data": createdUser},
@@ -76,7 +73,7 @@ func (r *UserController) CreateUser(ctx *gin.Context) {
 	return
 }
 
-func (r *UserController) GetUserById(ctx *gin.Context) {
+func (r Controller) GetUserById(ctx *gin.Context) {
 	rawId := ctx.Param("userId")
 	objId, _ := primitive.ObjectIDFromHex(rawId)
 
@@ -84,7 +81,7 @@ func (r *UserController) GetUserById(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(
 			http.StatusInternalServerError,
-			responses.UserResponse{
+			domain.UserResponse{
 				Status:  http.StatusInternalServerError,
 				Message: "error",
 				Data:    map[string]interface{}{"data": err.Error()},
@@ -95,7 +92,7 @@ func (r *UserController) GetUserById(ctx *gin.Context) {
 
 	ctx.JSON(
 		http.StatusOK,
-		responses.UserResponse{
+		domain.UserResponse{
 			Status:  http.StatusOK,
 			Message: "success",
 			Data:    map[string]interface{}{"data": user},
@@ -103,7 +100,7 @@ func (r *UserController) GetUserById(ctx *gin.Context) {
 	)
 }
 
-func (r *UserController) GetUserByEmail(ctx *gin.Context) {
+func (r Controller) GetUserByEmail(ctx *gin.Context) {
 	email := ctx.Param("email")
 
 	user, err := r.userService.GetUserByEmail(ctx, email)
@@ -111,7 +108,7 @@ func (r *UserController) GetUserByEmail(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(
 			http.StatusInternalServerError,
-			responses.UserResponse{
+			domain.UserResponse{
 				Status:  http.StatusInternalServerError,
 				Message: "error",
 				Data:    map[string]interface{}{"data": err.Error()},
@@ -122,7 +119,7 @@ func (r *UserController) GetUserByEmail(ctx *gin.Context) {
 
 	ctx.JSON(
 		http.StatusOK,
-		responses.UserResponse{
+		domain.UserResponse{
 			Status:  http.StatusOK,
 			Message: "success",
 			Data:    map[string]interface{}{"data": user},
