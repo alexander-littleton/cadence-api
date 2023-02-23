@@ -5,7 +5,7 @@ build:
 	go run main.go
 
 test:
-	ginkgo ./...
+	go test ./...
 
 db:
 	brew services start mongodb-community
