@@ -1,7 +1,7 @@
 install:
 	 go get ./... && go install github.com/onsi/ginkgo/v2/ginkgo
 
-build:
+run:
 	go run main.go
 
 test:
