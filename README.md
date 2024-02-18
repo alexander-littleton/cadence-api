@@ -10,9 +10,9 @@ $ make run
 
 ### Test
 
-    ```bash
-    $ make test
-    ```
+```bash
+$ make test
+```
 
 
 
